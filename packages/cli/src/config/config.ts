@@ -705,6 +705,8 @@ export async function loadCliConfig(
     extensionLoader: extensionManager,
     enableExtensionReloading: settings.experimental?.extensionReloading,
     enableAgents: settings.experimental?.enableAgents,
+    enableEventDrivenScheduler:
+      settings.experimental?.enableEventDrivenScheduler,
     skillsSupport: settings.experimental?.skills,
     disabledSkills: settings.skills?.disabled,
     experimentalJitContext: settings.experimental?.jitContext,

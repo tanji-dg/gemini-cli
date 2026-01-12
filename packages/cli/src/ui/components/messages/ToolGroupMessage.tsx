@@ -164,6 +164,7 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
                       availableTerminalHeightPerToolMessage
                     }
                     terminalWidth={terminalWidth - 4}
+                    correlationId={tool.correlationId}
                   />
                 )}
               {tool.outputFile && (

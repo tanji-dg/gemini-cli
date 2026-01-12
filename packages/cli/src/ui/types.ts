@@ -15,6 +15,7 @@ import type {
   RetrieveUserQuotaResponse,
   SkillDefinition,
   AgentDefinition,
+  SerializableConfirmationDetails,
 } from '@google/gemini-cli-core';
 import type { PartListUnion } from '@google/genai';
 import { type ReactNode } from 'react';
@@ -73,10 +74,14 @@ export interface IndividualToolCallDisplay {
   description: string;
   resultDisplay: ToolResultDisplay | undefined;
   status: ToolCallStatus;
-  confirmationDetails: ToolCallConfirmationDetails | undefined;
+  confirmationDetails:
+    | ToolCallConfirmationDetails
+    | SerializableConfirmationDetails
+    | undefined;
   renderOutputAsMarkdown?: boolean;
   ptyId?: number;
   outputFile?: string;
+  correlationId?: string;
 }
 
 export interface CompressionProps {

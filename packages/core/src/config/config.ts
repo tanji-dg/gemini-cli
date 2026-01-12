@@ -355,6 +355,7 @@ export interface ConfigParameters {
   };
   previewFeatures?: boolean;
   enableAgents?: boolean;
+  enableEventDrivenScheduler?: boolean;
   skillsSupport?: boolean;
   disabledSkills?: string[];
   experimentalJitContext?: boolean;
@@ -494,6 +495,7 @@ export class Config {
     | undefined;
 
   private readonly enableAgents: boolean;
+  private readonly enableEventDrivenScheduler: boolean;
   private readonly skillsSupport: boolean;
   private disabledSkills: string[];
 
@@ -569,6 +571,7 @@ export class Config {
     this._activeModel = params.model;
     this.enableAgents = params.enableAgents ?? false;
     this.disableLLMCorrection = params.disableLLMCorrection ?? false;
+    this.enableEventDrivenScheduler = params.enableEventDrivenScheduler ?? true;
     this.skillsSupport = params.skillsSupport ?? false;
     this.disabledSkills = params.disabledSkills ?? [];
     this.modelAvailabilityService = new ModelAvailabilityService();
@@ -714,6 +717,11 @@ export class Config {
 
     this.modelConfigService = new ModelConfigService(
       modelConfigServiceConfig ?? DEFAULT_MODEL_CONFIGS,
+    );
+
+    debugLogger.log(
+      'Event driven scheduler enabled: ',
+      this.enableEventDrivenScheduler,
     );
   }
 
@@ -1435,6 +1443,10 @@ export class Config {
 
   isAgentsEnabled(): boolean {
     return this.enableAgents;
+  }
+
+  isEventDrivenSchedulerEnabled(): boolean {
+    return this.enableEventDrivenScheduler;
   }
 
   getNoBrowser(): boolean {

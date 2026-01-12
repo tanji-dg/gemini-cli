@@ -19,8 +19,9 @@ import type {
   TrackedExecutingToolCall,
   TrackedCancelledToolCall,
   TrackedWaitingToolCall,
-} from './useReactToolScheduler.js';
+} from './toolSchedulerUtils.js';
 import { useReactToolScheduler } from './useReactToolScheduler.js';
+import { useEventDrivenToolScheduler } from './useEventDrivenToolScheduler.js';
 import type {
   Config,
   EditorType,
@@ -34,6 +35,7 @@ import {
   ToolConfirmationOutcome,
   tokenLimit,
   debugLogger,
+  MessageBusType,
 } from '@google/gemini-cli-core';
 import type { Part, PartListUnion } from '@google/genai';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
@@ -85,11 +87,21 @@ vi.mock('@google/gemini-cli-core', async (importOriginal) => {
 });
 
 const mockUseReactToolScheduler = useReactToolScheduler as Mock;
+const mockUseEventDrivenToolScheduler = useEventDrivenToolScheduler as Mock;
+
 vi.mock('./useReactToolScheduler.js', async (importOriginal) => {
   const actualSchedulerModule = (await importOriginal()) as any;
   return {
     ...(actualSchedulerModule || {}),
     useReactToolScheduler: vi.fn(),
+  };
+});
+
+vi.mock('./useEventDrivenToolScheduler.js', async (importOriginal) => {
+  const actualSchedulerModule = (await importOriginal()) as any;
+  return {
+    ...(actualSchedulerModule || {}),
+    useEventDrivenToolScheduler: vi.fn(),
   };
 });
 
@@ -164,6 +176,7 @@ describe('useGeminiStream', () => {
 
   beforeEach(() => {
     vi.clearAllMocks(); // Clear mocks before each test
+    handleAtCommandSpy = vi.spyOn(atCommandProcessor, 'handleAtCommand');
 
     mockAddItem = vi.fn();
     // Define the mock for getGeminiClient
@@ -222,6 +235,8 @@ describe('useGeminiStream', () => {
         .mockReturnValue(contentGeneratorConfig),
       isInteractive: () => false,
       getExperiments: () => {},
+      isEventDrivenSchedulerEnabled: vi.fn(() => false),
+      getMessageBus: vi.fn(),
     } as unknown as Config;
     mockOnDebugMessage = vi.fn();
     mockHandleSlashCommand = vi.fn().mockResolvedValue(false);
@@ -232,23 +247,26 @@ describe('useGeminiStream', () => {
     mockMarkToolsAsSubmitted = vi.fn();
 
     // Default mock for useReactToolScheduler to prevent toolCalls being undefined initially
-    mockUseReactToolScheduler.mockReturnValue([
+    const defaultSchedulerValue = [
       [], // Default to empty array for toolCalls
       mockScheduleToolCalls,
       mockMarkToolsAsSubmitted,
       vi.fn(), // setToolCallsForDisplay
       mockCancelAllToolCalls,
-    ]);
+      0, // lastToolOutputTime
+    ];
 
-    // Reset mocks for GeminiClient instance methods (startChat and sendMessageStream)
-    // The GeminiClient constructor itself is mocked at the module level.
-    mockStartChat.mockClear().mockResolvedValue({
-      sendMessageStream: mockSendMessageStream,
-    } as unknown as any); // GeminiChat -> any
-    mockSendMessageStream
-      .mockClear()
-      .mockReturnValue((async function* () {})());
-    handleAtCommandSpy = vi.spyOn(atCommandProcessor, 'handleAtCommand');
+    mockUseReactToolScheduler.mockReturnValue(defaultSchedulerValue);
+    mockUseEventDrivenToolScheduler.mockReturnValue(defaultSchedulerValue);
+  });
+
+  it('should use useEventDrivenToolScheduler when enabled in config', async () => {
+    vi.mocked(mockConfig.isEventDrivenSchedulerEnabled).mockReturnValue(true);
+
+    renderTestHook();
+
+    expect(mockUseEventDrivenToolScheduler).toHaveBeenCalled();
+    expect(mockUseReactToolScheduler).not.toHaveBeenCalled();
   });
 
   const mockLoadedSettings: LoadedSettings = {
@@ -321,13 +339,17 @@ describe('useGeminiStream', () => {
           rerender({ ...props, toolCalls: newToolCalls });
         });
 
-        mockUseReactToolScheduler.mockImplementation(() => [
+        const schedulerTuple = [
           props.toolCalls,
           mockScheduleToolCalls,
           mockMarkToolsAsSubmitted,
           mockSetToolCallsForDisplay,
           statefulCancelAllToolCalls, // Use the stateful mock
-        ]);
+          0, // lastToolOutputTime
+        ];
+
+        mockUseReactToolScheduler.mockReturnValue(schedulerTuple);
+        mockUseEventDrivenToolScheduler.mockReturnValue(schedulerTuple);
 
         return useGeminiStream(
           props.client,
@@ -1892,6 +1914,38 @@ describe('useGeminiStream', () => {
       // Only the awaiting_approval tool should be processed
       expect(mockOnConfirmAwaiting).toHaveBeenCalledTimes(1);
       expect(mockOnConfirmExecuting).not.toHaveBeenCalled();
+    });
+
+    it('should prioritize auto-approval via MessageBus when correlationId is present', async () => {
+      const mockPublish = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(mockConfig.getMessageBus).mockReturnValue({
+        publish: mockPublish,
+      } as any);
+
+      const mockOnConfirm = vi.fn().mockResolvedValue(undefined);
+      const awaitingApprovalToolCalls: TrackedToolCall[] = [
+        {
+          ...createMockToolCall('replace', 'call1', 'edit', mockOnConfirm),
+          correlationId: 'corr-1',
+        },
+      ];
+
+      const { result } = renderTestHook(awaitingApprovalToolCalls);
+
+      await act(async () => {
+        await result.current.handleApprovalModeChange(ApprovalMode.YOLO);
+      });
+
+      // Should prioritize MessageBus
+      expect(mockPublish).toHaveBeenCalledWith({
+        type: MessageBusType.TOOL_CONFIRMATION_RESPONSE,
+        correlationId: 'corr-1',
+        confirmed: true,
+        outcome: ToolConfirmationOutcome.ProceedOnce,
+      });
+
+      // Legacy onConfirm should NOT be called if correlationId was used
+      expect(mockOnConfirm).not.toHaveBeenCalled();
     });
   });
 

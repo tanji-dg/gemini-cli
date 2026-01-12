@@ -31,6 +31,7 @@ import {
   logConversationFinishedEvent,
   ConversationFinishedEvent,
   ApprovalMode,
+  MessageBusType,
   parseAndFormatApiError,
   ToolConfirmationOutcome,
   promptIdContext,
@@ -59,14 +60,15 @@ import { useStateAndRef } from './useStateAndRef.js';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 import { useLogger } from './useLogger.js';
 import { SHELL_COMMAND_NAME } from '../constants.js';
+import { useReactToolScheduler } from './useReactToolScheduler.js';
+import { useEventDrivenToolScheduler } from './useEventDrivenToolScheduler.js';
 import {
-  useReactToolScheduler,
   mapToDisplay as mapTrackedToolCallsToDisplay,
   type TrackedToolCall,
   type TrackedCompletedToolCall,
   type TrackedCancelledToolCall,
   type TrackedWaitingToolCall,
-} from './useReactToolScheduler.js';
+} from './toolSchedulerUtils.js';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { useSessionStats } from '../contexts/SessionContext.js';
@@ -132,6 +134,11 @@ export const useGeminiStream = (
     return new GitService(config.getProjectRoot(), storage);
   }, [config, storage]);
 
+  // --- DUAL MODE SCHEDULER SELECTION ---
+  const useSchedulerHook = config.isEventDrivenSchedulerEnabled()
+    ? useEventDrivenToolScheduler
+    : useReactToolScheduler;
+
   const [
     toolCalls,
     scheduleToolCalls,
@@ -139,7 +146,7 @@ export const useGeminiStream = (
     setToolCallsForDisplay,
     cancelAllToolCalls,
     lastToolOutputTime,
-  ] = useReactToolScheduler(
+  ] = useSchedulerHook(
     async (completedToolCallsFromScheduler) => {
       // This onComplete is called when ALL scheduled tools for a given batch are done.
       if (completedToolCallsFromScheduler.length > 0) {
@@ -1131,9 +1138,25 @@ export const useGeminiStream = (
 
         // Process pending tool calls sequentially to reduce UI chaos
         for (const call of awaitingApprovalCalls) {
-          if (
+          if (call.correlationId) {
+            // Event-driven flow: Publish to MessageBus
+            try {
+              await config.getMessageBus().publish({
+                type: MessageBusType.TOOL_CONFIRMATION_RESPONSE,
+                correlationId: call.correlationId,
+                confirmed: true,
+                outcome: ToolConfirmationOutcome.ProceedOnce,
+              });
+            } catch (error) {
+              debugLogger.warn(
+                `Failed to auto-approve tool call ${call.request.callId} via MessageBus:`,
+                error,
+              );
+            }
+          } else if (
             (call.confirmationDetails as ToolCallConfirmationDetails)?.onConfirm
           ) {
+            // Legacy flow: Use callback
             try {
               await (
                 call.confirmationDetails as ToolCallConfirmationDetails
@@ -1148,7 +1171,7 @@ export const useGeminiStream = (
         }
       }
     },
-    [toolCalls],
+    [config, toolCalls],
   );
 
   const handleCompletedTools = useCallback(

@@ -12,8 +12,13 @@ import { RenderInline } from '../../utils/InlineMarkdownRenderer.js';
 import type {
   ToolCallConfirmationDetails,
   Config,
+  SerializableConfirmationDetails,
 } from '@google/gemini-cli-core';
-import { IdeClient, ToolConfirmationOutcome } from '@google/gemini-cli-core';
+import {
+  IdeClient,
+  ToolConfirmationOutcome,
+  MessageBusType,
+} from '@google/gemini-cli-core';
 import type { RadioSelectItem } from '../shared/RadioButtonSelect.js';
 import { RadioButtonSelect } from '../shared/RadioButtonSelect.js';
 import { MaxSizedBox } from '../shared/MaxSizedBox.js';
@@ -23,11 +28,14 @@ import { useAlternateBuffer } from '../../hooks/useAlternateBuffer.js';
 import { useSettings } from '../../contexts/SettingsContext.js';
 
 export interface ToolConfirmationMessageProps {
-  confirmationDetails: ToolCallConfirmationDetails;
+  confirmationDetails:
+    | ToolCallConfirmationDetails
+    | SerializableConfirmationDetails;
   config: Config;
   isFocused?: boolean;
   availableTerminalHeight?: number;
   terminalWidth: number;
+  correlationId?: string;
 }
 
 export const ToolConfirmationMessage: React.FC<
@@ -38,9 +46,8 @@ export const ToolConfirmationMessage: React.FC<
   isFocused = true,
   availableTerminalHeight,
   terminalWidth,
+  correlationId,
 }) => {
-  const { onConfirm } = confirmationDetails;
-
   const isAlternateBuffer = useAlternateBuffer();
   const settings = useSettings();
   const allowPermanentApproval =
@@ -78,8 +85,30 @@ export const ToolConfirmationMessage: React.FC<
         );
       }
     }
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    onConfirm(outcome);
+
+    // === DUAL MODE HANDLER ===
+    if (correlationId) {
+      // 1. Event-Driven Path
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      config.getMessageBus().publish({
+        type: MessageBusType.TOOL_CONFIRMATION_RESPONSE,
+        correlationId,
+        confirmed: outcome !== ToolConfirmationOutcome.Cancel,
+        outcome,
+      });
+    } else if (
+      'onConfirm' in confirmationDetails &&
+      confirmationDetails.onConfirm
+    ) {
+      // Legacy Callback Path
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      confirmationDetails.onConfirm(outcome);
+    } else {
+      // This should be impossible to reach if the component is used correctly
+      throw new Error(
+        'Invariant Violation: ToolConfirmationMessage requires either a correlationId (event-driven) or an onConfirm callback (legacy).',
+      );
+    }
   };
 
   const isTrustedFolder = config.isTrustedFolder();
@@ -102,8 +131,13 @@ export const ToolConfirmationMessage: React.FC<
     let question = '';
     const options: Array<RadioSelectItem<ToolConfirmationOutcome>> = [];
 
+    const isModifying =
+      confirmationDetails.type === 'edit' &&
+      'isModifying' in confirmationDetails &&
+      confirmationDetails.isModifying;
+
     if (confirmationDetails.type === 'edit') {
-      if (!confirmationDetails.isModifying) {
+      if (!isModifying) {
         question = `Apply this change?`;
         options.push({
           label: 'Allow once',
@@ -256,7 +290,7 @@ export const ToolConfirmationMessage: React.FC<
     }
 
     if (confirmationDetails.type === 'edit') {
-      if (!confirmationDetails.isModifying) {
+      if (!isModifying) {
         bodyContent = (
           <DiffRenderer
             diffContent={confirmationDetails.fileDiff}
@@ -342,8 +376,13 @@ export const ToolConfirmationMessage: React.FC<
     allowPermanentApproval,
   ]);
 
+  const isModifying =
+    confirmationDetails.type === 'edit' &&
+    'isModifying' in confirmationDetails &&
+    confirmationDetails.isModifying;
+
   if (confirmationDetails.type === 'edit') {
-    if (confirmationDetails.isModifying) {
+    if (isModifying) {
       return (
         <Box
           width={terminalWidth}
