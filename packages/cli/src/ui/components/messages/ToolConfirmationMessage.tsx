@@ -13,7 +13,11 @@ import type {
   ToolCallConfirmationDetails,
   Config,
 } from '@google/gemini-cli-core';
-import { IdeClient, ToolConfirmationOutcome } from '@google/gemini-cli-core';
+import {
+  IdeClient,
+  ToolConfirmationOutcome,
+  hasRedirection,
+} from '@google/gemini-cli-core';
 import type { RadioSelectItem } from '../shared/RadioButtonSelect.js';
 import { RadioButtonSelect } from '../shared/RadioButtonSelect.js';
 import { MaxSizedBox } from '../shared/MaxSizedBox.js';
@@ -268,25 +272,50 @@ export const ToolConfirmationMessage: React.FC<
       }
     } else if (confirmationDetails.type === 'exec') {
       const executionProps = confirmationDetails;
+
+      const containsRedirection = hasRedirection(executionProps.command);
+
       let bodyContentHeight = availableBodyContentHeight();
       if (bodyContentHeight !== undefined) {
         bodyContentHeight -= 2; // Account for padding;
+        if (containsRedirection) {
+          bodyContentHeight -= 3; // Account for Spacer + Note/Tip lines
+        }
       }
 
-      const commandBox = (
-        <Box>
-          <Text color={theme.text.link}>{executionProps.command}</Text>
-        </Box>
+      const commandBoxChildren = (
+        <>
+          <Box>
+            <Text color={theme.text.link}>{executionProps.command}</Text>
+          </Box>
+          {containsRedirection && (
+            <>
+              <Box />
+              <Box>
+                <Text color={theme.text.primary}>
+                  <Text bold>Note:</Text> Command contains redirection which can
+                  be undesirable.
+                </Text>
+              </Box>
+              <Box>
+                <Text color={theme.border.default}>
+                  Tip: Toggle auto-edit (Shift+Tab) to allow redirection in the
+                  future.
+                </Text>
+              </Box>
+            </>
+          )}
+        </>
       );
 
       bodyContent = isAlternateBuffer ? (
-        commandBox
+        <Box flexDirection="column">{commandBoxChildren}</Box>
       ) : (
         <MaxSizedBox
           maxHeight={bodyContentHeight}
           maxWidth={Math.max(terminalWidth, 1)}
         >
-          {commandBox}
+          {commandBoxChildren}
         </MaxSizedBox>
       );
     } else if (confirmationDetails.type === 'info') {

@@ -4,7 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ToolConfirmationOutcome } from '@google/gemini-cli-core';
+import {
+  ToolConfirmationOutcome,
+  hasRedirection,
+} from '@google/gemini-cli-core';
 import { Box, Text } from 'ink';
 import type React from 'react';
 import { theme } from '../semantic-colors.js';
@@ -67,6 +70,8 @@ export const ShellConfirmationDialog: React.FC<
     },
   ];
 
+  const anyContainsRedirection = commands.some((cmd) => hasRedirection(cmd));
+
   return (
     <Box flexDirection="row" width="100%">
       <Box
@@ -92,10 +97,29 @@ export const ShellConfirmationDialog: React.FC<
             marginTop={1}
           >
             {commands.map((cmd) => (
-              <Text key={cmd} color={theme.text.link}>
-                <RenderInline text={cmd} defaultColor={theme.text.link} />
-              </Text>
+              <Box key={cmd}>
+                <Text color={theme.text.link}>
+                  <RenderInline text={cmd} defaultColor={theme.text.link} />
+                </Text>
+              </Box>
             ))}
+            {anyContainsRedirection && (
+              <>
+                <Box />
+                <Box>
+                  <Text color={theme.text.primary}>
+                    <Text bold>Note:</Text> Command contains redirection which
+                    can be undesirable.
+                  </Text>
+                </Box>
+                <Box>
+                  <Text color={theme.border.default}>
+                    Tip: Toggle auto-edit (Shift+Tab) to allow redirection in
+                    the future.
+                  </Text>
+                </Box>
+              </>
+            )}
           </Box>
         </Box>
 

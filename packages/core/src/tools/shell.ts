@@ -38,6 +38,8 @@ import {
   getCommandRoots,
   initializeShellParsers,
   stripShellWrapper,
+  parseCommandDetails,
+  hasRedirection,
 } from '../utils/shell-utils.js';
 import { SHELL_TOOL_NAME } from './tool-names.js';
 import type { MessageBus } from '../confirmation-bus/message-bus.js';
@@ -99,17 +101,24 @@ export class ShellToolInvocation extends BaseToolInvocation<
 
   protected override async getConfirmationDetails(
     _abortSignal: AbortSignal,
+    _reason?: string,
   ): Promise<ToolCallConfirmationDetails | false> {
     const command = stripShellWrapper(this.params.command);
-    let rootCommands = [...new Set(getCommandRoots(command))];
 
-    // Fallback for UI display if parser fails or returns no commands (e.g.
-    // variable assignments only)
-    if (rootCommands.length === 0 && command.trim()) {
+    const parsed = parseCommandDetails(command);
+    let rootCommandDisplay = '';
+
+    if (!parsed || parsed.hasError || parsed.details.length === 0) {
+      // Fallback if parser fails
       const fallback = command.trim().split(/\s+/)[0];
-      if (fallback) {
-        rootCommands = [fallback];
+      rootCommandDisplay = fallback || 'shell command';
+      if (hasRedirection(command)) {
+        rootCommandDisplay += ', redirection';
       }
+    } else {
+      rootCommandDisplay = parsed.details
+        .map((detail) => detail.name)
+        .join(', ');
     }
 
     // Rely entirely on PolicyEngine for interactive confirmation.
@@ -119,7 +128,7 @@ export class ShellToolInvocation extends BaseToolInvocation<
       type: 'exec',
       title: 'Confirm Shell Command',
       command: this.params.command,
-      rootCommand: rootCommands.join(', '),
+      rootCommand: rootCommandDisplay,
       onConfirm: async (outcome: ToolConfirmationOutcome) => {
         await this.publishPolicyUpdate(outcome);
       },
