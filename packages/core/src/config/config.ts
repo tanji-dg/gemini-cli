@@ -358,7 +358,6 @@ export interface ConfigParameters {
   skillsSupport?: boolean;
   disabledSkills?: string[];
   adminSkillsEnabled?: boolean;
-  adminDisabledSkills?: string[];
   experimentalJitContext?: boolean;
   onModelChange?: (model: string) => void;
   mcpEnabled?: boolean;
@@ -366,7 +365,6 @@ export interface ConfigParameters {
   onReload?: () => Promise<{
     disabledSkills?: string[];
     adminSkillsEnabled?: boolean;
-    adminDisabledSkills?: string[];
   }>;
 }
 
@@ -506,7 +504,6 @@ export class Config {
   private readonly skillsSupport: boolean;
   private disabledSkills: string[];
   private readonly adminSkillsEnabled: boolean;
-  private readonly adminDisabledSkills: string[];
 
   private readonly experimentalJitContext: boolean;
   private contextManager?: ContextManager;
@@ -581,7 +578,6 @@ export class Config {
     this.skillsSupport = params.skillsSupport ?? false;
     this.disabledSkills = params.disabledSkills ?? [];
     this.adminSkillsEnabled = params.adminSkillsEnabled ?? true;
-    this.adminDisabledSkills = params.adminDisabledSkills ?? [];
     this.modelAvailabilityService = new ModelAvailabilityService();
     this.previewFeatures = params.previewFeatures ?? undefined;
     this.experimentalJitContext = params.experimentalJitContext ?? false;
@@ -765,10 +761,7 @@ export class Config {
 
     // Discover skills if enabled
     if (this.skillsSupport) {
-      this.getSkillManager().setAdminSettings(
-        this.adminSkillsEnabled,
-        this.adminDisabledSkills,
-      );
+      this.getSkillManager().setAdminSettings(this.adminSkillsEnabled);
       await this.getSkillManager().discoverSkills(
         this.storage,
         this.getExtensions(),
@@ -1577,7 +1570,6 @@ export class Config {
       this.disabledSkills = refreshed.disabledSkills ?? [];
       this.getSkillManager().setAdminSettings(
         refreshed.adminSkillsEnabled ?? this.adminSkillsEnabled,
-        refreshed.adminDisabledSkills ?? this.adminDisabledSkills,
       );
     }
 
