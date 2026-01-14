@@ -6,6 +6,7 @@
 
 import type { Content } from '@google/genai';
 import { createHash } from 'node:crypto';
+import process from 'node:process';
 import type { ServerGeminiStreamEvent } from '../core/turn.js';
 import { GeminiEventType } from '../core/turn.js';
 import {
@@ -540,6 +541,12 @@ export class LoopDetectionService {
       return null;
     } catch (e) {
       this.config.getDebugMode() ? debugLogger.warn(e) : debugLogger.debug(e);
+      if (this.config.getExitOnError()) {
+        debugLogger.error(
+          'Fatal error in loop detection. Exiting process due to --exit-on-error flag.',
+        );
+        process.exit(1);
+      }
       return null;
     }
   }
