@@ -26,6 +26,7 @@ import type {
 import {
   ListResourcesResultSchema,
   ListRootsRequestSchema,
+  LoggingMessageNotificationSchema,
   ReadResourceResultSchema,
   ResourceListChangedNotificationSchema,
   ToolListChangedNotificationSchema,
@@ -353,6 +354,27 @@ export class McpClient {
         },
       );
     }
+
+    // Register handler for log message notifications (e.g. from PAL's clink tool)
+    this.client.setNotificationHandler(
+      LoggingMessageNotificationSchema,
+      (notification) => {
+        const { level, data } = notification.params;
+        // Map MCP log levels to core feedback severities
+        const severityMap: Record<string, 'info' | 'warning' | 'error'> = {
+          debug: 'info',
+          info: 'info',
+          notice: 'info',
+          warning: 'warning',
+          error: 'error',
+          critical: 'error',
+          alert: 'error',
+          emergency: 'error',
+        };
+        const severity = severityMap[level] || 'info';
+        coreEvents.emitFeedback(severity, String(data));
+      },
+    );
   }
 
   /**

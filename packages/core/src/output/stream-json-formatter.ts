@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import * as fs from 'node:fs';
 import type { JsonStreamEvent, StreamStats } from './types.js';
 import type { SessionMetrics } from '../telemetry/uiTelemetry.js';
 
@@ -26,7 +27,14 @@ export class StreamJsonFormatter {
    * @param event - The stream event to emit
    */
   emitEvent(event: JsonStreamEvent): void {
-    process.stdout.write(this.formatEvent(event));
+    // Use fs.writeSync to bypass Node.js stdout buffering when piped.
+    // This is critical for real-time responsiveness in stream-json mode.
+    try {
+      fs.writeSync(process.stdout.fd, this.formatEvent(event));
+    } catch (_e) {
+      // Fallback if writeSync fails for some reason
+      process.stdout.write(this.formatEvent(event));
+    }
   }
 
   /**
