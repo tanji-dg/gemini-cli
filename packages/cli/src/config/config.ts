@@ -90,6 +90,7 @@ export interface CliArgs {
   rawOutput: boolean | undefined;
   acceptRawOutputRisk: boolean | undefined;
   isCommand: boolean | undefined;
+  exitOnError?: boolean | undefined;
 }
 
 export async function parseArguments(
@@ -107,6 +108,11 @@ export async function parseArguments(
       alias: 'd',
       type: 'boolean',
       description: 'Run in debug mode (open debug console with F12)',
+      default: false,
+    })
+    .option('exit-on-error', {
+      type: 'boolean',
+      description: 'Exit process immediately on fatal errors or loops?',
       default: false,
     })
     .command('$0 [query..]', 'Launch Gemini CLI', (yargsInstance) =>
