@@ -2,7 +2,7 @@
 # Wrapper for built gemini cli
 # This script ensures that --model and other flags are prioritized to avoid misinterpretation by yargs.
 
-DIR="$(cd "$(dirname "$0")" && pwd)"
+DIR="$(dirname "$(readlink -f "$0")")"
 NODE_PATH=$(which node)
 
 # Extract --model and its value if present
@@ -33,5 +33,7 @@ FINAL_ARGS+=("${OTHER_ARGS[@]}")
 
 # Debug output to stderr for PAL diagnostics
 echo "DEBUG: gemini-built.sh prioritized args: ${FINAL_ARGS[@]}" >&2
+
+#export GEMINI_API_KEY=AIzaSyC1iaplOR91iO96tVrDTYTfDrpRBdqd0aw
 
 exec "$NODE_PATH" "$DIR/packages/cli/dist/index.js" "${FINAL_ARGS[@]}"
