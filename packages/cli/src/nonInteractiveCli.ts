@@ -101,6 +101,17 @@ export async function runNonInteractive({
 
     const abortController = new AbortController();
 
+    // Setup signal handlers for graceful cancellation
+    const signalHandler = () => {
+      if (isAborting) {
+        return;
+      }
+      isAborting = true;
+      abortController.abort();
+    };
+    process.on('SIGINT', signalHandler);
+    process.on('SIGTERM', signalHandler);
+
     // Track cancellation state
     let isAborting = false;
     let cancelMessageTimer: NodeJS.Timeout | null = null;
@@ -159,6 +170,10 @@ export async function runNonInteractive({
     };
 
     const cleanupStdinCancellation = () => {
+      // Remove signal handlers
+      process.off('SIGINT', signalHandler);
+      process.off('SIGTERM', signalHandler);
+
       // Clear any pending cancel message timer
       if (cancelMessageTimer) {
         clearTimeout(cancelMessageTimer);
