@@ -18,7 +18,10 @@ import { MCPOAuthProvider } from '../mcp/oauth-provider.js';
 import { MCPOAuthTokenStorage } from '../mcp/oauth-token-storage.js';
 import { OAuthUtils } from '../mcp/oauth-utils.js';
 import type { PromptRegistry } from '../prompts/prompt-registry.js';
-import { ToolListChangedNotificationSchema } from '@modelcontextprotocol/sdk/types.js';
+import {
+  ResourceListChangedNotificationSchema,
+  ToolListChangedNotificationSchema,
+} from '@modelcontextprotocol/sdk/types.js';
 
 import { WorkspaceContext } from '../utils/workspaceContext.js';
 import {
@@ -558,8 +561,10 @@ describe('mcp-client', () => {
         getStatus: vi.fn(),
         registerCapabilities: vi.fn(),
         setRequestHandler: vi.fn(),
-        setNotificationHandler: vi.fn((_, handler) => {
-          resourceListHandler = handler;
+        setNotificationHandler: vi.fn((schema, handler) => {
+          if (schema === ResourceListChangedNotificationSchema) {
+            resourceListHandler = handler;
+          }
         }),
         getServerCapabilities: vi
           .fn()
@@ -620,7 +625,10 @@ describe('mcp-client', () => {
       await client.connect();
       await client.discover({} as Config);
 
-      expect(mockedClient.setNotificationHandler).toHaveBeenCalledOnce();
+      expect(mockedClient.setNotificationHandler).toHaveBeenCalledWith(
+        ResourceListChangedNotificationSchema,
+        expect.any(Function),
+      );
       expect(resourceListHandler).toBeDefined();
 
       await resourceListHandler?.({
@@ -871,7 +879,10 @@ describe('mcp-client', () => {
 
       await client.connect();
 
-      expect(mockedClient.setNotificationHandler).not.toHaveBeenCalled();
+      expect(mockedClient.setNotificationHandler).not.toHaveBeenCalledWith(
+        ToolListChangedNotificationSchema,
+        expect.any(Function),
+      );
     });
 
     it('should refresh tools and notify manager when notification is received', async () => {

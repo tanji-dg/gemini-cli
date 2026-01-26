@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import * as fs from 'node:fs';
 import { StreamJsonFormatter } from './stream-json-formatter.js';
 import { JsonStreamEventType } from './types.js';
 import type {
@@ -17,6 +18,14 @@ import type {
 } from './types.js';
 import type { SessionMetrics } from '../telemetry/uiTelemetry.js';
 import { ToolCallDecision } from '../telemetry/tool-call-decision.js';
+
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
+  return {
+    ...actual,
+    writeSync: vi.fn().mockImplementation(() => 0),
+  };
+});
 
 describe('StreamJsonFormatter', () => {
   let formatter: StreamJsonFormatter;
@@ -32,6 +41,7 @@ describe('StreamJsonFormatter', () => {
 
   afterEach(() => {
     stdoutWriteSpy.mockRestore();
+    vi.mocked(fs.writeSync).mockClear();
   });
 
   describe('formatEvent', () => {
@@ -216,8 +226,11 @@ describe('StreamJsonFormatter', () => {
 
       formatter.emitEvent(event);
 
-      expect(stdoutWriteSpy).toHaveBeenCalledTimes(1);
-      expect(stdoutWriteSpy).toHaveBeenCalledWith(JSON.stringify(event) + '\n');
+      expect(vi.mocked(fs.writeSync)).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(fs.writeSync)).toHaveBeenCalledWith(
+        process.stdout.fd,
+        JSON.stringify(event) + '\n',
+      );
     });
 
     it('should emit multiple events sequentially', () => {
@@ -238,13 +251,15 @@ describe('StreamJsonFormatter', () => {
       formatter.emitEvent(event1);
       formatter.emitEvent(event2);
 
-      expect(stdoutWriteSpy).toHaveBeenCalledTimes(2);
-      expect(stdoutWriteSpy).toHaveBeenNthCalledWith(
+      expect(vi.mocked(fs.writeSync)).toHaveBeenCalledTimes(2);
+      expect(vi.mocked(fs.writeSync)).toHaveBeenNthCalledWith(
         1,
+        process.stdout.fd,
         JSON.stringify(event1) + '\n',
       );
-      expect(stdoutWriteSpy).toHaveBeenNthCalledWith(
+      expect(vi.mocked(fs.writeSync)).toHaveBeenNthCalledWith(
         2,
+        process.stdout.fd,
         JSON.stringify(event2) + '\n',
       );
     });

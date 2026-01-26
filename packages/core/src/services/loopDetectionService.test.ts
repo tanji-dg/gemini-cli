@@ -39,6 +39,8 @@ describe('LoopDetectionService', () => {
       getTelemetryEnabled: () => true,
       isInteractive: () => false,
       getDisableLoopDetection: () => false,
+      getExitOnError: () => false,
+      getWorkingDir: () => process.cwd(),
       getModelAvailabilityService: vi
         .fn()
         .mockReturnValue(createAvailabilityServiceMock()),
@@ -754,6 +756,8 @@ describe('LoopDetectionService LLM Checks', () => {
       getBaseLlmClient: () => mockBaseLlmClient,
       getDisableLoopDetection: () => false,
       getDebugMode: () => false,
+      getExitOnError: () => false,
+      getWorkingDir: () => process.cwd(),
       getTelemetryEnabled: () => true,
       getModel: vi.fn().mockReturnValue('cognitive-loop-v1'),
       modelConfigService: {

@@ -104,6 +104,38 @@ exports[`RewindViewer > Navigation > handles 'down' navigation > after-down 1`] 
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯"
 `;
 
+exports[`RewindViewer > Navigation > handles 'down' navigation > after-down 2`] = `
+"
+  ERROR [vitest] No "REFERENCE_CONTENT_START" export is defined on the "@google/gemini-cli-core"
+       mock. Did you forget to return it from "vi.mock"?
+       If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+
+ - If you need to partially mock a module, you can use "importOriginal" helper inside:\\t
+ - \\t
+ -VitestMocker.create
+  rror               (file:///home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/vitest/dist/c
+                     hunks/execute.B7h3T_Hc.js:284:17)
+ -Object.ge
+           (file:///home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/vitest/dist/chunks/exec
+           ute.B7h3T_Hc.js:330:16)
+ - stripReferenceContent (src/ui/utils/formatters.ts:94:12)
+ - renderItem (src/ui/components/RewindViewer.tsx:238:33)
+ -  (src/ui/components/shared/BaseSelectionList.tsx:162:16)
+ -     at Array.map (<anonymous>)\\t
+ - BaseSelectionList (src/ui/components/shared/BaseSelectionList.tsx:108:21)
+ -Object.react-stack-bott
+  m-frame                (/home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/react-reconciler
+                         /cjs/react-reconciler.development.js:15859:20)
+ -renderWithHoo
+  s            (/home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/react-reconciler/cjs/react
+               -reconciler.development.js:3221:22)
+ -updateFunctionComp
+  nent              (/home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/react-reconciler/cjs/
+                    react-reconciler.development.js:6475:19)
+"
+`;
+
 exports[`RewindViewer > Navigation > handles 'up' navigation > after-up 1`] = `
 "╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │                                                                                                                      │
@@ -125,6 +157,38 @@ exports[`RewindViewer > Navigation > handles 'up' navigation > after-up 1`] = `
 │ (Use Enter to select a message, Esc to close, Right/Left to expand/collapse)                                         │
 │                                                                                                                      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯"
+`;
+
+exports[`RewindViewer > Navigation > handles 'up' navigation > after-up 2`] = `
+"
+  ERROR [vitest] No "REFERENCE_CONTENT_START" export is defined on the "@google/gemini-cli-core"
+       mock. Did you forget to return it from "vi.mock"?
+       If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+
+ - If you need to partially mock a module, you can use "importOriginal" helper inside:\\t
+ - \\t
+ -VitestMocker.create
+  rror               (file:///home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/vitest/dist/c
+                     hunks/execute.B7h3T_Hc.js:284:17)
+ -Object.ge
+           (file:///home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/vitest/dist/chunks/exec
+           ute.B7h3T_Hc.js:330:16)
+ - stripReferenceContent (src/ui/utils/formatters.ts:94:12)
+ - renderItem (src/ui/components/RewindViewer.tsx:238:33)
+ -  (src/ui/components/shared/BaseSelectionList.tsx:162:16)
+ -     at Array.map (<anonymous>)\\t
+ - BaseSelectionList (src/ui/components/shared/BaseSelectionList.tsx:108:21)
+ -Object.react-stack-bott
+  m-frame                (/home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/react-reconciler
+                         /cjs/react-reconciler.development.js:15859:20)
+ -renderWithHoo
+  s            (/home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/react-reconciler/cjs/react
+               -reconciler.development.js:3221:22)
+ -updateFunctionComp
+  nent              (/home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/react-reconciler/cjs/
+                    react-reconciler.development.js:6475:19)
+"
 `;
 
 exports[`RewindViewer > Navigation > handles cyclic navigation > cyclic-down 1`] = `
@@ -150,6 +214,38 @@ exports[`RewindViewer > Navigation > handles cyclic navigation > cyclic-down 1`]
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯"
 `;
 
+exports[`RewindViewer > Navigation > handles cyclic navigation > cyclic-down 2`] = `
+"
+  ERROR [vitest] No "REFERENCE_CONTENT_START" export is defined on the "@google/gemini-cli-core"
+       mock. Did you forget to return it from "vi.mock"?
+       If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+
+ - If you need to partially mock a module, you can use "importOriginal" helper inside:\\t
+ - \\t
+ -VitestMocker.create
+  rror               (file:///home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/vitest/dist/c
+                     hunks/execute.B7h3T_Hc.js:284:17)
+ -Object.ge
+           (file:///home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/vitest/dist/chunks/exec
+           ute.B7h3T_Hc.js:330:16)
+ - stripReferenceContent (src/ui/utils/formatters.ts:94:12)
+ - renderItem (src/ui/components/RewindViewer.tsx:238:33)
+ -  (src/ui/components/shared/BaseSelectionList.tsx:162:16)
+ -     at Array.map (<anonymous>)\\t
+ - BaseSelectionList (src/ui/components/shared/BaseSelectionList.tsx:108:21)
+ -Object.react-stack-bott
+  m-frame                (/home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/react-reconciler
+                         /cjs/react-reconciler.development.js:15859:20)
+ -renderWithHoo
+  s            (/home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/react-reconciler/cjs/react
+               -reconciler.development.js:3221:22)
+ -updateFunctionComp
+  nent              (/home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/react-reconciler/cjs/
+                    react-reconciler.development.js:6475:19)
+"
+`;
+
 exports[`RewindViewer > Navigation > handles cyclic navigation > cyclic-up 1`] = `
 "╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │                                                                                                                      │
@@ -171,6 +267,38 @@ exports[`RewindViewer > Navigation > handles cyclic navigation > cyclic-up 1`] =
 │ (Use Enter to select a message, Esc to close, Right/Left to expand/collapse)                                         │
 │                                                                                                                      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯"
+`;
+
+exports[`RewindViewer > Navigation > handles cyclic navigation > cyclic-up 2`] = `
+"
+  ERROR [vitest] No "REFERENCE_CONTENT_START" export is defined on the "@google/gemini-cli-core"
+       mock. Did you forget to return it from "vi.mock"?
+       If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+
+ - If you need to partially mock a module, you can use "importOriginal" helper inside:\\t
+ - \\t
+ -VitestMocker.create
+  rror               (file:///home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/vitest/dist/c
+                     hunks/execute.B7h3T_Hc.js:284:17)
+ -Object.ge
+           (file:///home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/vitest/dist/chunks/exec
+           ute.B7h3T_Hc.js:330:16)
+ - stripReferenceContent (src/ui/utils/formatters.ts:94:12)
+ - renderItem (src/ui/components/RewindViewer.tsx:238:33)
+ -  (src/ui/components/shared/BaseSelectionList.tsx:162:16)
+ -     at Array.map (<anonymous>)\\t
+ - BaseSelectionList (src/ui/components/shared/BaseSelectionList.tsx:108:21)
+ -Object.react-stack-bott
+  m-frame                (/home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/react-reconciler
+                         /cjs/react-reconciler.development.js:15859:20)
+ -renderWithHoo
+  s            (/home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/react-reconciler/cjs/react
+               -reconciler.development.js:3221:22)
+ -updateFunctionComp
+  nent              (/home/htanji/proj/pal-mcp-server/gemini-cli/node_modules/react-reconciler/cjs/
+                    react-reconciler.development.js:6475:19)
+"
 `;
 
 exports[`RewindViewer > Rendering > renders 'a single interaction' 1`] = `

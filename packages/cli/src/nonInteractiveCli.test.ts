@@ -33,6 +33,7 @@ import {
   type Mock,
   type MockInstance,
 } from 'vitest';
+import * as fs from 'node:fs';
 import type { LoadedSettings } from './config/settings.js';
 
 // Mock core modules
@@ -53,6 +54,14 @@ const mockCoreEvents = vi.hoisted(() => ({
 }));
 
 const mockSchedulerSchedule = vi.hoisted(() => vi.fn());
+
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
+  return {
+    ...actual,
+    writeSync: vi.fn().mockImplementation(() => 0),
+  };
+});
 
 vi.mock('@google/gemini-cli-core', async (importOriginal) => {
   const original =
@@ -220,6 +229,7 @@ describe('runNonInteractive', () => {
   });
 
   afterEach(() => {
+    vi.mocked(fs.writeSync).mockClear();
     vi.restoreAllMocks();
   });
 
@@ -231,8 +241,14 @@ describe('runNonInteractive', () => {
     }
   }
 
-  const getWrittenOutput = () =>
-    processStdoutSpy.mock.calls.map((c) => c[0]).join('');
+  const getWrittenOutput = () => {
+    const stdoutCalls = processStdoutSpy.mock.calls.map((c) => c[0]).join('');
+    const fsWriteCalls = vi
+      .mocked(fs.writeSync)
+      .mock.calls.map((c) => c[1])
+      .join('');
+    return stdoutCalls + fsWriteCalls;
+  };
 
   it('should process input and write text output', async () => {
     const events: ServerGeminiStreamEvent[] = [
