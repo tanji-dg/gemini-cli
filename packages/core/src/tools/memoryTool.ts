@@ -15,7 +15,7 @@ import type { FunctionDeclaration } from '@google/genai';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { Storage } from '../config/storage.js';
-import * as Diff from 'diff';
+import { createPatch } from 'diff';
 import { DEFAULT_DIFF_OPTIONS } from './diffOptions.js';
 import { tildeifyPath } from '../utils/paths.js';
 import type {
@@ -205,14 +205,15 @@ class MemoryToolInvocation extends BaseToolInvocation<
     const newContent = computeNewContent(currentContent, this.params.fact);
 
     const fileName = path.basename(memoryFilePath);
-    const fileDiff = Diff.createPatch(
-      fileName,
-      currentContent,
-      newContent,
-      'Current',
-      'Proposed',
-      DEFAULT_DIFF_OPTIONS,
-    );
+    const fileDiff =
+      createPatch(
+        fileName,
+        currentContent,
+        newContent,
+        'Current',
+        'Proposed',
+        DEFAULT_DIFF_OPTIONS,
+      ) ?? '';
 
     const confirmationDetails: ToolEditConfirmationDetails = {
       type: 'edit',

@@ -35,6 +35,7 @@ vi.mock('@google/gemini-cli-core', async (importOriginal) => {
   return {
     ...actual,
     getMCPServerStatus: vi.fn(),
+    ASK_USER_DISPLAY_NAME: 'Ask User',
   };
 });
 

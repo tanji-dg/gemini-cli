@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import fsPromises from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import * as Diff from 'diff';
+import { createPatch } from 'diff';
 import { WRITE_FILE_TOOL_NAME } from './tool-names.js';
 import type { Config } from '../config/config.js';
 import { ApprovalMode } from '../policy/types.js';
@@ -203,14 +203,15 @@ class WriteFileToolInvocation extends BaseToolInvocation<
     );
     const fileName = path.basename(this.resolvedPath);
 
-    const fileDiff = Diff.createPatch(
-      fileName,
-      originalContent, // Original content (empty if new file or unreadable)
-      correctedContent, // Content after potential correction
-      'Current',
-      'Proposed',
-      DEFAULT_DIFF_OPTIONS,
-    );
+    const fileDiff =
+      createPatch(
+        fileName,
+        originalContent, // Original content (empty if new file or unreadable)
+        correctedContent, // Content after potential correction
+        'Current',
+        'Proposed',
+        DEFAULT_DIFF_OPTIONS,
+      ) ?? '';
 
     const ideClient = await IdeClient.getInstance();
     const ideConfirmation =
@@ -326,14 +327,15 @@ class WriteFileToolInvocation extends BaseToolInvocation<
         ? '' // Or some indicator of unreadable content
         : originalContent;
 
-      const fileDiff = Diff.createPatch(
-        fileName,
-        currentContentForDiff,
-        fileContent,
-        'Original',
-        'Written',
-        DEFAULT_DIFF_OPTIONS,
-      );
+      const fileDiff =
+        createPatch(
+          fileName,
+          currentContentForDiff,
+          fileContent,
+          'Original',
+          'Written',
+          DEFAULT_DIFF_OPTIONS,
+        ) ?? '';
 
       const originallyProposedContent = ai_proposed_content || content;
       const diffStat = getDiffStat(

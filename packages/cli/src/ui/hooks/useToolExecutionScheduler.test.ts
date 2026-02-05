@@ -33,6 +33,7 @@ vi.mock('@google/gemini-cli-core', async (importOriginal) => {
       schedule: vi.fn().mockResolvedValue([]),
       cancelAll: vi.fn(),
     })),
+    ROOT_SCHEDULER_ID: 'root',
   };
 });
 

@@ -359,6 +359,7 @@ export class McpClient {
     this.client.setNotificationHandler(
       LoggingMessageNotificationSchema,
       (notification) => {
+        if (!notification.params) return;
         const { level, data } = notification.params;
         // Map MCP log levels to core feedback severities
         const severityMap: Record<string, 'info' | 'warning' | 'error'> = {

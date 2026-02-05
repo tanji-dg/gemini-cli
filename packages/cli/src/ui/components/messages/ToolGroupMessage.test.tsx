@@ -14,6 +14,15 @@ import { Scrollable } from '../shared/Scrollable.js';
 import { ASK_USER_DISPLAY_NAME, makeFakeConfig } from '@google/gemini-cli-core';
 import os from 'node:os';
 
+vi.mock('@google/gemini-cli-core', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@google/gemini-cli-core')>();
+  return {
+    ...actual,
+    ASK_USER_DISPLAY_NAME: 'Ask User',
+  };
+});
+
 describe('<ToolGroupMessage />', () => {
   afterEach(() => {
     vi.restoreAllMocks();

@@ -33,7 +33,6 @@ import {
   type Mock,
   type MockInstance,
 } from 'vitest';
-import * as fs from 'node:fs';
 import type { LoadedSettings } from './config/settings.js';
 
 // Mock core modules
@@ -54,12 +53,23 @@ const mockCoreEvents = vi.hoisted(() => ({
 }));
 
 const mockSchedulerSchedule = vi.hoisted(() => vi.fn());
+const { mockWriteSync } = vi.hoisted(() => ({
+  mockWriteSync: vi.fn().mockImplementation(() => 0),
+}));
 
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>();
   return {
     ...actual,
-    writeSync: vi.fn().mockImplementation(() => 0),
+    writeSync: mockWriteSync,
+  };
+});
+
+vi.mock('fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('fs')>();
+  return {
+    ...actual,
+    writeSync: mockWriteSync,
   };
 });
 
@@ -90,6 +100,26 @@ vi.mock('@google/gemini-cli-core', async (importOriginal) => {
       stdout: process.stdout,
       stderr: process.stderr,
     })),
+    ROOT_SCHEDULER_ID: 'root',
+    promptIdContext: {
+      run: (_id: string, fn: () => Promise<void>) => fn(),
+      get: () => 'test-prompt-id',
+    },
+    StreamJsonFormatter: class {
+      emitEvent = vi.fn((event) => {
+        // Simulate writing to stdout for tests
+        mockWriteSync(1, JSON.stringify(event) + '\n');
+      });
+      convertToStreamStats = vi.fn().mockReturnValue({
+        total_tokens: 0,
+        input_tokens: 0,
+        output_tokens: 0,
+        cached: 0,
+        input: 0,
+        duration_ms: 0,
+        tool_calls: 0,
+      });
+    },
   };
 });
 
@@ -229,7 +259,7 @@ describe('runNonInteractive', () => {
   });
 
   afterEach(() => {
-    vi.mocked(fs.writeSync).mockClear();
+    mockWriteSync.mockClear();
     vi.restoreAllMocks();
   });
 
@@ -243,10 +273,7 @@ describe('runNonInteractive', () => {
 
   const getWrittenOutput = () => {
     const stdoutCalls = processStdoutSpy.mock.calls.map((c) => c[0]).join('');
-    const fsWriteCalls = vi
-      .mocked(fs.writeSync)
-      .mock.calls.map((c) => c[1])
-      .join('');
+    const fsWriteCalls = mockWriteSync.mock.calls.map((c) => c[1]).join('');
     return stdoutCalls + fsWriteCalls;
   };
 

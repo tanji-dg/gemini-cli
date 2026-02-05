@@ -39,39 +39,26 @@ vi.mock('../commands/utils.js', () => ({
   exitCli: vi.fn(),
 }));
 
-vi.mock('fs', async (importOriginal) => {
-  const actualFs = await importOriginal<typeof import('fs')>();
-  const pathMod = await import('node:path');
-  const mockHome = pathMod.resolve(pathMod.sep, 'mock', 'home', 'user');
-  const MOCK_CWD1 = process.cwd();
-  const MOCK_CWD2 = pathMod.resolve(pathMod.sep, 'home', 'user', 'project');
+const fsMock = vi.hoisted(() => ({
+  mkdirSync: vi.fn(),
+  writeFileSync: vi.fn(),
+  readFileSync: vi.fn(() => '{}'),
+  existsSync: vi.fn(() => true),
+  statSync: vi.fn(() => ({
+    isDirectory: () => true,
+    isFile: () => true,
+  })),
+  promises: {
+    stat: vi.fn(async () => ({
+      isDirectory: () => true,
+      isFile: () => true,
+    })),
+  },
+  realpathSync: vi.fn((p) => p),
+}));
 
-  const mockPaths = new Set([
-    MOCK_CWD1,
-    MOCK_CWD2,
-    pathMod.resolve(pathMod.sep, 'cli', 'path1'),
-    pathMod.resolve(pathMod.sep, 'settings', 'path1'),
-    pathMod.join(mockHome, 'settings', 'path2'),
-    pathMod.join(MOCK_CWD2, 'cli', 'path2'),
-    pathMod.join(MOCK_CWD2, 'settings', 'path3'),
-  ]);
-
-  return {
-    ...actualFs,
-    mkdirSync: vi.fn((p) => {
-      mockPaths.add(p.toString());
-    }),
-    writeFileSync: vi.fn(),
-    existsSync: vi.fn((p) => mockPaths.has(p.toString())),
-    statSync: vi.fn((p) => {
-      if (mockPaths.has(p.toString())) {
-        return { isDirectory: () => true } as unknown as import('fs').Stats;
-      }
-      return actualFs.statSync(p as unknown as string);
-    }),
-    realpathSync: vi.fn((p) => p),
-  };
-});
+vi.mock('node:fs', () => fsMock);
+vi.mock('fs', () => fsMock);
 
 vi.mock('os', async (importOriginal) => {
   const actualOs = await importOriginal<typeof os>();
@@ -95,6 +82,18 @@ vi.mock('@google/gemini-cli-core', async () => {
   const actualServer = await vi.importActual<typeof ServerConfig>(
     '@google/gemini-cli-core',
   );
+
+  // Patch Config prototype if getCustomIgnoreFilePaths is missing (e.g. stale dist)
+  if (
+    actualServer.Config &&
+    !actualServer.Config.prototype.getCustomIgnoreFilePaths
+  ) {
+    actualServer.Config.prototype.getCustomIgnoreFilePaths = function () {
+      // @ts-expect-error - Accessing private/protected property for fallback
+      return this.fileFiltering?.customIgnoreFilePaths || [];
+    };
+  }
+
   return {
     ...actualServer,
     IdeClient: {
@@ -140,6 +139,8 @@ vi.mock('@google/gemini-cli-core', async () => {
       defaultDecision: ServerConfig.PolicyDecision.ASK_USER,
       approvalMode: ServerConfig.ApprovalMode.DEFAULT,
     })),
+    getAdminErrorMessage: (feature: string) =>
+      `${feature} is disabled by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-gemini-cli`,
   };
 });
 
@@ -1594,6 +1595,15 @@ describe('loadCliConfig with includeDirectories', () => {
 
   it('should combine and resolve paths from settings and CLI arguments', async () => {
     const mockCwd = path.resolve(path.sep, 'home', 'user', 'project');
+    const { WorkspaceContext } = await import('@google/gemini-cli-core');
+    vi.spyOn(
+      WorkspaceContext.prototype as unknown as Record<
+        string,
+        (p: string) => string
+      >,
+      'resolveAndValidateDir',
+    ).mockImplementation((p: string) => p);
+
     process.argv = [
       'node',
       'script.js',

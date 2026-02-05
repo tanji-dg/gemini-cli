@@ -4,15 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as Diff from 'diff';
+import {
+  structuredPatch,
+  type StructuredPatchOptionsNonabortable,
+  type StructuredPatch,
+  type StructuredPatchHunk,
+} from 'diff';
 import type { DiffStat } from './tools.js';
 
-const DEFAULT_STRUCTURED_PATCH_OPTS: Diff.PatchOptions = {
+const DEFAULT_STRUCTURED_PATCH_OPTS: StructuredPatchOptionsNonabortable = {
   context: 3,
   ignoreWhitespace: false,
 };
 
-export const DEFAULT_DIFF_OPTIONS: Diff.PatchOptions = {
+export const DEFAULT_DIFF_OPTIONS: {
+  context: number;
+  ignoreWhitespace: boolean;
+} = {
   context: 3,
   ignoreWhitespace: false,
 };
@@ -23,13 +31,13 @@ export function getDiffStat(
   aiStr: string,
   userStr: string,
 ): DiffStat {
-  const getStats = (patch: Diff.ParsedDiff) => {
+  const getStats = (patch: StructuredPatch) => {
     let addedLines = 0;
     let removedLines = 0;
     let addedChars = 0;
     let removedChars = 0;
 
-    patch.hunks.forEach((hunk: Diff.Hunk) => {
+    patch.hunks.forEach((hunk: StructuredPatchHunk) => {
       hunk.lines.forEach((line: string) => {
         if (line.startsWith('+')) {
           addedLines++;
@@ -43,7 +51,7 @@ export function getDiffStat(
     return { addedLines, removedLines, addedChars, removedChars };
   };
 
-  const modelPatch = Diff.structuredPatch(
+  const modelPatch = structuredPatch(
     fileName,
     fileName,
     oldStr,
@@ -54,7 +62,7 @@ export function getDiffStat(
   );
   const modelStats = getStats(modelPatch);
 
-  const userPatch = Diff.structuredPatch(
+  const userPatch = structuredPatch(
     fileName,
     fileName,
     aiStr,

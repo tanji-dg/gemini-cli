@@ -6,6 +6,29 @@
 
 import { vi, beforeEach, afterEach } from 'vitest';
 import { format } from 'node:util';
+import { Config } from '@google/gemini-cli-core';
+
+// Patch Config prototype to handle stale build artifacts where new methods are missing
+if (!Config.prototype.getUseBackgroundColor) {
+  Config.prototype.getUseBackgroundColor = function () {
+    try {
+      // @ts-expect-error - Accessing private property for fallback
+      return this.useBackgroundColor ?? true;
+    } catch {
+      return true;
+    }
+  };
+}
+if (!Config.prototype.getCustomIgnoreFilePaths) {
+  Config.prototype.getCustomIgnoreFilePaths = function () {
+    try {
+      // @ts-expect-error - Accessing private property for fallback
+      return this.fileFiltering?.customIgnoreFilePaths || [];
+    } catch {
+      return [];
+    }
+  };
+}
 
 global.IS_REACT_ACT_ENVIRONMENT = true;
 

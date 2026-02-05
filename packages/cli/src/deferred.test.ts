@@ -28,6 +28,8 @@ vi.mock('@google/gemini-cli-core', async () => {
   return {
     ...actual,
     coreEvents: mockCoreEvents,
+    getAdminErrorMessage: (feature: string) =>
+      `${feature} is disabled by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-gemini-cli`,
   };
 });
 

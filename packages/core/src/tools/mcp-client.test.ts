@@ -21,6 +21,7 @@ import type { PromptRegistry } from '../prompts/prompt-registry.js';
 import {
   ResourceListChangedNotificationSchema,
   ToolListChangedNotificationSchema,
+  PromptListChangedNotificationSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { WorkspaceContext } from '../utils/workspaceContext.js';
@@ -648,9 +649,10 @@ describe('mcp-client', () => {
 
     it('refreshes prompts when prompt list change notification is received', async () => {
       let listCallCount = 0;
-      let promptListHandler:
-        | ((notification: unknown) => Promise<void> | void)
-        | undefined;
+      const handlers = new Map<
+        object,
+        (notification: unknown) => void | Promise<void>
+      >();
       const mockedClient = {
         connect: vi.fn(),
         discover: vi.fn(),
@@ -658,8 +660,8 @@ describe('mcp-client', () => {
         getStatus: vi.fn(),
         registerCapabilities: vi.fn(),
         setRequestHandler: vi.fn(),
-        setNotificationHandler: vi.fn((_, handler) => {
-          promptListHandler = handler;
+        setNotificationHandler: vi.fn((schema, handler) => {
+          handlers.set(schema, handler);
         }),
         getServerCapabilities: vi
           .fn()
@@ -710,12 +712,15 @@ describe('mcp-client', () => {
       await client.connect();
       await client.discover({ sanitizationConfig: EMPTY_CONFIG } as Config);
 
-      expect(mockedClient.setNotificationHandler).toHaveBeenCalledOnce();
-      expect(promptListHandler).toBeDefined();
+      expect(mockedClient.setNotificationHandler).toHaveBeenCalled();
+      const promptHandler = handlers.get(PromptListChangedNotificationSchema);
+      expect(promptHandler).toBeDefined();
 
-      await promptListHandler?.({
-        method: 'notifications/prompts/list_changed',
-      });
+      if (promptHandler) {
+        await promptHandler({
+          method: 'notifications/prompts/list_changed',
+        });
+      }
 
       expect(promptRegistry.removePromptsByServer).toHaveBeenCalledWith(
         'test-server',

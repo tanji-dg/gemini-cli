@@ -8,7 +8,7 @@ import * as fsPromises from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import * as crypto from 'node:crypto';
-import * as Diff from 'diff';
+import { createPatch } from 'diff';
 import {
   BaseDeclarativeTool,
   BaseToolInvocation,
@@ -679,14 +679,15 @@ class EditToolInvocation
     }
 
     const fileName = path.basename(this.params.file_path);
-    const fileDiff = Diff.createPatch(
-      fileName,
-      editData.currentContent ?? '',
-      editData.newContent,
-      'Current',
-      'Proposed',
-      DEFAULT_DIFF_OPTIONS,
-    );
+    const fileDiff =
+      createPatch(
+        fileName,
+        editData.currentContent ?? '',
+        editData.newContent,
+        'Current',
+        'Proposed',
+        DEFAULT_DIFF_OPTIONS,
+      ) ?? '';
     const ideClient = await IdeClient.getInstance();
     const ideConfirmation =
       this.config.getIdeMode() && ideClient.isDiffingEnabled()
@@ -821,14 +822,15 @@ class EditToolInvocation
         // Generate diff for display, even though core logic doesn't technically need it
         // The CLI wrapper will use this part of the ToolResult
         const fileName = path.basename(this.params.file_path);
-        const fileDiff = Diff.createPatch(
-          fileName,
-          editData.currentContent ?? '', // Should not be null here if not isNewFile
-          editData.newContent,
-          'Current',
-          'Proposed',
-          DEFAULT_DIFF_OPTIONS,
-        );
+        const fileDiff =
+          createPatch(
+            fileName,
+            editData.currentContent ?? '', // Should not be null here if not isNewFile
+            editData.newContent,
+            'Current',
+            'Proposed',
+            DEFAULT_DIFF_OPTIONS,
+          ) ?? '';
 
         const diffStat = getDiffStat(
           fileName,
